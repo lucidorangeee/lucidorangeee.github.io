@@ -1,109 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <title></title>
-  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="googlebot" content="noindex, nofollow">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="stylesheet" type="text/css" href="/css/result-light.css">
-
-
-  <style id="compiled-css" type="text/css">
-      html, body {
-	overflow: hidden;
-	margin: 0;
-	width: 100%;
-	height: 100%;
-}
-
-#loading-screen {
-	position: absolute;
-	z-index: 2;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: #000000;
-	opacity: 1;
- 	transition: 1s opacity;
-}
-
-#loading-screen.fade-out {
-    opacity: 0;
-}
-
-#loader {
-    display: block;
-    position: relative;
-    left: 50%;
-    top: 50%;
-    width: 150px;
-    height: 150px;
-    margin: -75px 0 0 -75px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: #9370DB;
-    -webkit-animation: spin 2s linear infinite;
-    animation: spin 2s linear infinite;
-}
-#loader:before {
-    content: "";
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: #BA55D3;
-    -webkit-animation: spin 3s linear infinite;
-    animation: spin 3s linear infinite;
-}
-#loader:after {
-    content: "";
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    bottom: 15px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: #FF00FF;
-    -webkit-animation: spin 1.5s linear infinite;
-    animation: spin 1.5s linear infinite;
-}
-@-webkit-keyframes spin {
-    0%   {
-        -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-    100% {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-@keyframes spin {
-    0%   {
-        -webkit-transform: rotate(0deg);
-        -ms-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-    100% {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-  </style>
-
-  <script id="insert"></script>
-
-
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="/index.css">
 </head>
 <body>
     <section id="loading-screen">
@@ -112,7 +16,7 @@
 
 </section>
 
-    <script type="module">//<![CDATA[
+<script type="module">
 
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.121.1/build/three.module.js';
@@ -120,13 +24,17 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/exampl
 import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/ColladaLoader.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/GLTFLoader.js';
 
+let INTERSECTED;
 
-let clock, camera, scene, renderer, mixer;
+let clock, camera, scene, renderer, mixer, raycaster;
+const pointer = new THREE.Vector2();
+
+let donut;
 
 init();
 animate();
 
-function init() {
+function init() { 
 
 	camera = new THREE.PerspectiveCamera( 25, window.innerWidth / window.innerHeight, 1, 10000 );
 	camera.position.set( 15, 10, - 15 );
@@ -145,13 +53,46 @@ function init() {
 		
 	} );
 
+    // raycaster
+    raycaster = new THREE.Raycaster();
+    
 	// collada
 
     const gloader = new GLTFLoader( loadingManager );
     gloader.load( './sprinkledDonut.glb', function (gltf) {
+        let model = gltf.scene;
+        model.name = 'donut';
+        model.userData.isContainer = true
+
+        gltf.scene.position.x = -2;
+        gltf.scene.position.y = -0.1;
+        gltf.scene.scale.multiplyScalar(10);
         scene.add( gltf.scene );
-    }
-    );
+    });
+
+    gloader.load( './tetris.glb', function (gltf) {
+        let model = gltf.scene;
+        model.name = 'tetris';
+        model.userData.isContainer = true
+
+        gltf.scene.position.x = 1;
+        gltf.scene.position.y = 0.3;
+        gltf.scene.position.z = 1;
+        gltf.scene.scale.multiplyScalar(5);
+        scene.add( gltf.scene );
+    });
+    
+    gloader.load( './github_icon.glb', function (gltf) {
+        gltf.scene.position.x = 0;
+        gltf.scene.position.y = 0;
+        gltf.scene.position.z = -3;
+        gltf.scene.scale.multiplyScalar(15);
+        gltf.scene.rotation.x = 0;
+        gltf.scene.rotation.y = 135;
+        gltf.scene.rotation.z = 0;
+        scene.add( gltf.scene );
+    });
+
 
     const loader = new THREE.FontLoader();
 
@@ -159,7 +100,7 @@ function init() {
 
         const geometry = new THREE.TextGeometry( 'Delicious Donut', {
             font: font,
-            size: 0.1,
+            size: 1,
             height: 0.01,
             curveSegments: 12,
             bevelEnabled: false,
@@ -170,8 +111,8 @@ function init() {
         } );
 
         const materials = [
-					new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
-					new THREE.MeshPhongMaterial( { color: 0xffffff } ) // side
+					new THREE.MeshPhongMaterial( { color: 0xff00ff, flatShading: true } ), // front
+					new THREE.MeshPhongMaterial( { color: 0xff00ff } ) // side
 				];
 
         var textMesh = new THREE.Mesh( geometry, materials );
@@ -183,16 +124,16 @@ function init() {
     } );
 
 	//
-
+/*
 	const gridHelper = new THREE.PolarGridHelper( 8, 16 );
 	scene.add( gridHelper );
-
+*/
 	//
 
-	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.2 );
+	const ambientLight = new THREE.AmbientLight( 0xffffff, 1.2 );
 	scene.add( ambientLight );
 
-	const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	const directionalLight = new THREE.DirectionalLight( 0xffffff, 3 );
 	directionalLight.position.set( 1, 1, - 1 );
 	scene.add( directionalLight );
 
@@ -206,12 +147,41 @@ function init() {
 	//
 
 	const controls = new OrbitControls( camera, renderer.domElement );
-	controls.target.set( 0, 0, 0 );
+	controls.target.set( 0, -2, 0 );
+    controls.maxDistance = 30;
+    controls.minDistance = 20;
+    
 	controls.update();
+
+    document.addEventListener( 'mousemove', onPointerMove );
+    document.addEventListener( 'click', onMouseDown, false );
 
 	//
 
 	window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function onMouseDown( event ) {
+    raycaster.setFromCamera( pointer, camera );
+    const intersects = raycaster.intersectObjects( scene.children, true );
+    if ( intersects.length > 0 ) { 
+        let container = getContainerObjByChild(intersects[0].object);
+        switch(container.name) {
+            case "donut":
+            window.location.href = "/donut.html";
+                break;
+            case "tetris":
+                console.log("yay");
+                break;
+        }
+        console.log(container.name)
+    }
+}
+
+function onPointerMove( event ) {
+
+    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
 }
 
@@ -237,8 +207,69 @@ function render() {
 
 	if ( mixer !== undefined ) mixer.update( delta );
 
+    raycaster.setFromCamera( pointer, camera );
+    const intersects = raycaster.intersectObjects( scene.children, true );
+    if ( intersects.length > 0 ) { 
+        let container = getContainerObjByChild(intersects[0].object);
+        if( container ) {
+            if (INTERSECTED != container ) { 
+            let meshlist = getMeshes(container);
+
+                if ( INTERSECTED ) 
+                {
+                    for(var i = 0; i < meshlist.length; i++)
+                        if( meshlist[i].material )
+                            meshlist[i].material.emissive.setHex( meshlist[i].currentHex );
+                }
+
+                INTERSECTED = container;
+                for(var i = 0; i < meshlist.length; i++)
+                {
+                    if( meshlist[i].material ) {
+                        meshlist[i].currentHex = meshlist[i].material.emissive.getHex();
+                        meshlist[i].material.emissive.setHex( 0x0000f0 );
+                    }
+                }
+            }
+        } 
+    } else {
+        if ( INTERSECTED ) {
+            let meshlist = getMeshes( INTERSECTED );
+            for(var i = 0; i < meshlist.length; i++)
+                if( meshlist[i].material ){
+                    meshlist[i].material.emissive.setHex( 0x000000 );
+                }
+            
+        }
+
+        INTERSECTED = null;
+    }  
+    
+    
 	renderer.render( scene, camera );
 
+}
+
+function getContainerObjByChild(obj) {
+  
+  if(obj.userData.isContainer) return obj;
+
+  else if(obj.parent != null) return getContainerObjByChild(obj.parent);
+
+  else return null;
+}
+
+function getMeshes( obj ){
+    let arr = []
+    let children_list = obj.children;
+    for(let c = 0; c < children_list.length; c++){
+        if(children_list[c].type == "Mesh")
+            arr.push(children_list[c])
+        if(children_list[c].children && children_list[c].children.length > 0)
+            arr.push(...getMeshes(children_list[c]));
+    }
+
+    return arr
 }
 
 function onTransitionEnd( event ) {
@@ -246,9 +277,7 @@ function onTransitionEnd( event ) {
 	event.target.remove();
 	
 }
-
-
-  //]]></script>
+</script>
 
   <script>
     // tell the embed parent frame the height of the content
