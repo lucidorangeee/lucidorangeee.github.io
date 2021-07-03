@@ -3,6 +3,13 @@ html, body {
 	margin: 0;
 	width: 100%;
 	height: 100%;
+    font-family: Courier New, sans-serif;
+}
+
+h1 {
+    font-size: 80px;
+    padding-left:40px;
+    padding-bottom:20px;
 }
 
 #sidebar {
@@ -10,18 +17,27 @@ html, body {
     width: 20%;
 }
 
+.contents {
+    min-height: 11rem;
+    line-height:3;
+    list-style: none;
+}
+
 #information {
+    overflow: scroll;
     float: left;
-    width: 80%;
+    width: 78%;
+    height: 79vh;
+    padding-right: 10px;
 }
 
 .row:after {
     content: "";
     display: table;
     clear: both;
-  }
+}
 
-  .column {
-    float: left;
-    width: 50%;
-  }
+hr.rounded {
+    border-top: 8px solid #bbb;
+    border-radius: 5px;
+}
